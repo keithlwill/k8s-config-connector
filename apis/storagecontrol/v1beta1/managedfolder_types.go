@@ -77,6 +77,7 @@ type StorageManagedFolderObservedState struct {
 // +kubebuilder:printcolumn:name="Status Age",JSONPath=".status.conditions[?(@.type=='Ready')].lastTransitionTime",type="date",description="The last transition time for the value in 'Status'"
 
 // StorageManagedFolder is the Schema for the StorageManagedFolder API
+// +kubebuilder:storageversion
 // +k8s:openapi-gen=true
 type StorageManagedFolder struct {
 	metav1.TypeMeta   `json:",inline"`
