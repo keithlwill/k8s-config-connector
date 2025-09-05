@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: storage.cnrm.cloud.google.com/v1alpha1
+apiVersion: storage.cnrm.cloud.google.com/v1beta1
 kind: StorageManagedFolder
 metadata:
   # This name will be used as the managed folder's ID.
   name: storagemanagedfolder-${uniqueId}
 spec:
+  resourceID: storagemanagedfolder-full-${uniqueId}
   projectRef:
     external: ${projectId}
   storagebucketRef:
