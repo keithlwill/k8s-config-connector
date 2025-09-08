@@ -19,7 +19,7 @@ metadata:
 spec:
   projectRef:
     # Replace ${PROJECT_ID?} with your project ID.
-    external: projects/gcs-seal-team
+    external: projects/${PROJECT_ID?}
   storagebucketRef:
     # Replace ${PROJECT_ID?} with your project ID.
-    name: gcs-seal-team-storagemanagedfolder-dep
+    name: ${PROJECT_ID?}-storagemanagedfolder-dep

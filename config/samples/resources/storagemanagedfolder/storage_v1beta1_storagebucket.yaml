@@ -16,4 +16,6 @@ apiVersion: storage.cnrm.cloud.google.com/v1beta1
 kind: StorageBucket
 metadata:
   # StorageBucket names must be globally unique. Replace ${PROJECT_ID?} with your project ID.
-  name: gcs-seal-team-storagemanagedfolder-dep
+  name: ${PROJECT_ID?}-storagemanagedfolder-dep
+spec:
+  uniformBucketLevelAccess: true

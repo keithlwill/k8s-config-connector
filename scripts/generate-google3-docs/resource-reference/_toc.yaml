@@ -301,6 +301,8 @@ toc:
     path: /config-connector/docs/reference/resource-docs/storage/storagebucketaccesscontrol.md
   - title: "StorageDefaultObjectAccessControl"
     path: /config-connector/docs/reference/resource-docs/storage/storagedefaultobjectaccesscontrol.md
+  - title: "StorageManagedFolder"
+    path: /config-connector/docs/reference/resource-docs/storage/storagemanagedfolder.md
   - title: "StorageNotification"
     path: /config-connector/docs/reference/resource-docs/storage/storagenotification.md
 - title: "Compute Engine"
