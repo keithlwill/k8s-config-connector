@@ -15,12 +15,12 @@
 apiVersion: storage.cnrm.cloud.google.com/v1beta1
 kind: StorageManagedFolder
 metadata:
-  name: storagemanagedfolder-sample
+  name: storagemanagedfolder-iam-sample
 spec:
-  resourceID: storagemanagedfolder-full
+  resourceID: storagemanagedfolder-iam-full
   projectRef:
     # Replace ${PROJECT_ID?} with your project ID.
     external: projects/gcs-seal-team
   storagebucketRef:
     # Replace ${PROJECT_ID?} with your project ID.
-    name: gcs-seal-team-storagemanagedfolder-dep
+    name: gcs-seal-team-storagemanagedfolderiam-dep

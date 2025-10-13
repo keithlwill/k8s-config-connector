@@ -209,6 +209,19 @@ func (a *iamValidatorHandler) validateIAMPartialPolicy(partialPolicy *v1beta1.IA
 
 func (a *iamValidatorHandler) validateIAMPolicyMember(policyMember *v1beta1.IAMPolicyMember, isDCLResource bool) admission.Response {
 	resourceRef := policyMember.Spec.ResourceReference
+
+	// First, check if this is a direct IAM resource.
+	if registry.IsIAMDirect(resourceRef.GroupVersionKind().GroupKind()) {
+		// For pure direct resources, the controller handles the logic.
+		// The webhook only needs to perform basic validation, like checking for unsupported conditions.
+		if doesIAMPolicyMemberHaveCondition(policyMember) {
+			return admission.Errored(http.StatusForbidden,
+				fmt.Errorf("GroupVersionKind %v does not support IAM Conditions in IAM Policy Member", resourceRef.GroupVersionKind()))
+		}
+		// If basic checks pass, allow the request to proceed.
+		return admission.Allowed("direct IAM resource; validation deferred to controller")
+	}
+
 	if isDCLResource {
 		return a.dclValidateIAMPolicyMember(policyMember)
 	}

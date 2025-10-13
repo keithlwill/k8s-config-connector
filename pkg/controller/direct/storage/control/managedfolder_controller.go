@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	iam "cloud.google.com/go/iam"
+	iampb "cloud.google.com/go/iam/apiv1/iampb"
 	refs "github.com/GoogleCloudPlatform/k8s-config-connector/apis/refs/v1beta1"
 	krm "github.com/GoogleCloudPlatform/k8s-config-connector/apis/storagecontrol/v1beta1"
 	"github.com/GoogleCloudPlatform/k8s-config-connector/pkg/config"
@@ -29,6 +31,8 @@ import (
 	gcp "cloud.google.com/go/storage/control/apiv2"
 
 	pb "cloud.google.com/go/storage/control/apiv2/controlpb"
+
+	storage "cloud.google.com/go/storage"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,9 +80,27 @@ func (m *modelManagedFolder) AdapterForObject(ctx context.Context, reader client
 		return nil, err
 	}
 
+	opts, err := m.config.RESTClientOptions()
+	if err != nil {
+		return nil, err
+	}
+	storageClient, err := storage.NewClient(ctx, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("building main storage client for IAM: %w", err)
+	}
+
+	// fqn := fmt.Sprintf("projects/_/buckets/%s/managedFolders/%s", id.Parent().BucketName, id.ID())
+	// resourceName := fmt.Sprintf("buckets/%s/managedFolders/%s", "HELP", "ME")
+	// buckets/<your bucket>/managedFolders/<your managed folder>
+
+	// projects/_/buckets/projects/_/buckets/bucket-for-managed-folder-iam-rfztcupxqgtllla/managedFolders/storagemanagedfolder-rfztcupxqgtllla\
+
+	mfName := fmt.Sprintf("%s/managedFolders/%s", id.Parent().BucketName, id.ID())
+	iamHandle := storageClient.Bucket(mfName).IAM()
 	return &ManagedFolderAdapter{
 		id:        id,
 		gcpClient: storageControlClient,
+		iamHandle: iamHandle,
 		desired:   obj,
 	}, nil
 }
@@ -125,6 +147,7 @@ func (m *modelManagedFolder) AdapterForURL(ctx context.Context, url string) (dir
 type ManagedFolderAdapter struct {
 	id        *krm.ManagedFolderIdentity
 	gcpClient *gcp.StorageControlClient
+	iamHandle *iam.Handle
 	desired   *krm.StorageManagedFolder
 	actual    *pb.ManagedFolder
 }
@@ -260,4 +283,61 @@ func (a *ManagedFolderAdapter) Delete(ctx context.Context, deleteOp *directbase.
 	log.V(2).Info("successfully deleted ManagedFolder", "name", a.id)
 
 	return true, nil
+}
+
+func (a *ManagedFolderAdapter) GetIAMPolicy(ctx context.Context) (*iampb.Policy, error) {
+	if a.id.ID() == "" {
+		return nil, fmt.Errorf("cannot get iam policy for missing resource")
+	}
+	if a.iamHandle == nil {
+		return nil, fmt.Errorf("IAM handle not initialized")
+	}
+
+	policyWrapper, err := a.iamHandle.Policy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting IAM policy: %w", err)
+	}
+	return policyToProto(policyWrapper), nil
+}
+
+// Correct the return type of SetIAMPolicy in the function signature.
+func (a *ManagedFolderAdapter) SetIAMPolicy(ctx context.Context, policy *iampb.Policy) (*iampb.Policy, error) {
+	if a.id.ID() == "" {
+		return nil, fmt.Errorf("cannot set iam policy for missing resource")
+	}
+	if a.iamHandle == nil {
+		return nil, fmt.Errorf("IAM handle not initialized")
+	}
+
+	policyWrapper := policyFromProto(policy)
+
+	if err := a.iamHandle.SetPolicy(ctx, policyWrapper); err != nil {
+		return nil, fmt.Errorf("setting IAM policy: %w", err)
+	}
+	// Per iam.Handle documentation, we should fetch the policy again to get the updated etag.
+	updatedPolicyWrapper, err := a.iamHandle.Policy(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting updated IAM policy after set: %w", err)
+	}
+
+	// Convert the result back to *iampb.Policy before returning.
+	return policyToProto(updatedPolicyWrapper), nil
+}
+
+// policyToProto converts the high-level iam.Policy wrapper to the underlying iampb.Policy proto.
+func policyToProto(p *iam.Policy) *iampb.Policy {
+	if p == nil {
+		return nil
+	}
+	return p.InternalProto
+}
+
+// policyFromProto wraps the iampb.Policy proto in the high-level iam.Policy struct.
+func policyFromProto(p *iampb.Policy) *iam.Policy {
+	if p == nil {
+		return nil
+	}
+	return &iam.Policy{
+		InternalProto: p,
+	}
 }

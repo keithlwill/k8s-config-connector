@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,14 +13,9 @@
 # limitations under the License.
 
 apiVersion: storage.cnrm.cloud.google.com/v1beta1
-kind: StorageManagedFolder
+kind: StorageBucket
 metadata:
-  name: storagemanagedfolder-sample
+  # StorageBucket names must be globally unique. Replace ${PROJECT_ID?} with your project ID.
+  name: gcs-seal-team-storagemanagedfolderiam-dep
 spec:
-  resourceID: storagemanagedfolder-full
-  projectRef:
-    # Replace ${PROJECT_ID?} with your project ID.
-    external: projects/gcs-seal-team
-  storagebucketRef:
-    # Replace ${PROJECT_ID?} with your project ID.
-    name: gcs-seal-team-storagemanagedfolder-dep
+  uniformBucketLevelAccess: true
